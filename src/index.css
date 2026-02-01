@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  font-family: 'IBM Plex Sans', 'Zen Kaku Gothic New', system-ui, sans-serif;
+  background: radial-gradient(circle at top, rgba(14, 165, 164, 0.25), transparent 45%),
+    radial-gradient(circle at 20% 20%, rgba(251, 113, 133, 0.2), transparent 40%),
+    #020617;
+  min-height: 100vh;
+}
+
+.pattern-grid {
+  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.card-shell {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(8px);
+}

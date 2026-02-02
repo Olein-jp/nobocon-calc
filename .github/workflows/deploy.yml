@@ -24,14 +24,14 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
-      - name: Upload to Xserver (SFTP)
-        env:
-          XSERVER_HOST: ${{ secrets.XSERVER_HOST }}
-          XSERVER_USER: ${{ secrets.XSERVER_USER }}
-          XSERVER_PASS: ${{ secrets.XSERVER_PASS }}
-          XSERVER_PATH: ${{ secrets.XSERVER_PATH }}
-        run: |
-          lftp -e "set sftp:auto-confirm yes; set sftp:connect-program 'ssh -o StrictHostKeyChecking=no'; mirror -R --delete --verbose dist $XSERVER_PATH; quit" -u "$XSERVER_USER","$XSERVER_PASS" sftp://$XSERVER_HOST
+      - name: Upload to Xserver (FTPS)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.XSERVER_HOST }}
+          username: ${{ secrets.XSERVER_USER }}
+          password: ${{ secrets.XSERVER_PASS }}
+          protocol: ftps
+          port: 21
+          local-dir: dist/
+          server-dir: ${{ secrets.XSERVER_PATH }}/
+          dangerous-clean-slate: true

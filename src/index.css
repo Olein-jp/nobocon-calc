@@ -26,3 +26,19 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.2);
   backdrop-filter: blur(8px);
 }
+
+.menu-attention {
+  animation: menuAttention 1.1s ease-in-out;
+}
+
+@keyframes menuAttention {
+  0% {
+    box-shadow: 0 10px 30px rgba(14, 165, 164, 0.2);
+  }
+  40% {
+    box-shadow: 0 16px 40px rgba(14, 165, 164, 0.4);
+  }
+  100% {
+    box-shadow: 0 10px 30px rgba(14, 165, 164, 0.25);
+  }
+}

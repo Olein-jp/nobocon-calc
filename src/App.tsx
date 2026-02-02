@@ -4,11 +4,28 @@ import { checkStorage, clearState, loadState, saveState, ttlMs } from './lib/sto
 import { initialState, reducer } from './state/reducer';
 
 const SAVE_DEBOUNCE_MS = 300;
+const MENU_ATTENTION_DELAY_MS = 2000;
+const MENU_ATTENTION_DURATION_MS = 1100;
+const MENU_SCROLL_THRESHOLD = 24;
+const menuLinks = [
+  { label: 'のぼコン トップページ', href: 'https://nobocon.com/', description: '公式サイト' },
+  { label: '東北シリーズ', href: 'https://nobocon.com/?cat=31', description: 'シリーズ一覧' },
+  { label: '北関東シリーズ', href: 'https://nobocon.com/?cat=33', description: 'シリーズ一覧' },
+  { label: '東京シリーズ', href: 'https://nobocon.com/?cat=34', description: 'シリーズ一覧' },
+  { label: '東海シリーズ', href: 'https://nobocon.com/?cat=37', description: 'シリーズ一覧' },
+  { label: '関西シリーズ', href: 'https://nobocon.com/?cat=35', description: 'シリーズ一覧' },
+  { label: '中国シリーズ', href: 'https://nobocon.com/?cat=47', description: 'シリーズ一覧' },
+  { label: '九州北部北部シリーズ', href: 'https://nobocon.com/?cat=32', description: 'シリーズ一覧' },
+  { label: '四国シリーズ', href: 'https://nobocon.com/?cat=50', description: 'シリーズ一覧' }
+];
 
 const App = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [storageAvailable, setStorageAvailable] = useState(true);
   const [storageMessage, setStorageMessage] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAttention, setMenuAttention] = useState(false);
+  const [menuCompact, setMenuCompact] = useState(false);
 
   useEffect(() => {
     const status = checkStorage();
@@ -31,6 +48,50 @@ const App = () => {
     }, SAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [state, storageAvailable]);
+
+  useEffect(() => {
+    let attentionTimer: number | undefined;
+    let clearTimer: number | undefined;
+    attentionTimer = window.setTimeout(() => {
+      setMenuAttention(true);
+      clearTimer = window.setTimeout(() => setMenuAttention(false), MENU_ATTENTION_DURATION_MS);
+    }, MENU_ATTENTION_DELAY_MS);
+    return () => {
+      if (attentionTimer) window.clearTimeout(attentionTimer);
+      if (clearTimer) window.clearTimeout(clearTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setMenuCompact(window.scrollY > MENU_SCROLL_THRESHOLD);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
 
   const total = useMemo(() => {
     const gradeTotal = gradeEntries.reduce(
@@ -193,6 +254,61 @@ const App = () => {
             ) : null}
           </section>
         </main>
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="関連ページのメニューを開く"
+          className={`fixed bottom-4 left-4 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-tide/50 bg-slate-900/90 text-2xl font-semibold text-tide shadow-[0_10px_30px_rgba(14,165,164,0.25)] transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tide ${
+            menuCompact ? 'scale-90 opacity-90' : 'scale-100'
+          } ${menuAttention ? 'menu-attention' : ''}`}
+        >
+          ≡
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen(false)}
+          aria-label="メニューを閉じる"
+          className={`fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-300 ${
+            menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        />
+
+        <aside
+          className={`fixed right-0 top-0 z-50 flex h-full w-72 max-w-[85vw] flex-col gap-6 overflow-y-auto border-l border-slate-800 bg-slate-950/95 px-6 py-6 text-slate-100 shadow-2xl transition-transform duration-300 ${
+            menuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          aria-hidden={!menuOpen}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-500">menu</p>
+              <p className="text-lg font-semibold text-white">関連ページ</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-full border border-slate-700/70 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:border-slate-200 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tide"
+            >
+              閉じる
+            </button>
+          </div>
+          <nav className="flex flex-col gap-3">
+            {menuLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl border border-slate-800/70 bg-slate-900/60 px-4 py-3 transition hover:border-tide/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tide"
+              >
+                <p className="text-sm font-semibold text-slate-100">{link.label}</p>
+                <p className="mt-1 text-xs text-slate-400">{link.description}</p>
+              </a>
+            ))}
+          </nav>
+        </aside>
       </div>
     </div>
   );

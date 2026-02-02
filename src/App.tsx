@@ -140,10 +140,6 @@ const App = () => {
 
         <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pb-16 pt-6">
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-100">級・段カウンター</h2>
-              <span className="text-xs text-slate-400">完登数 × 点数</span>
-            </div>
             <div className="grid gap-4">
               {gradeEntries.map(([key, points], index) => {
                 const count = state.counts[key];

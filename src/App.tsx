@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useState } from 'react';
-import { boardEntries, formatPoints, gradeEntries } from './lib/score';
+import { boardEntries, formatPoints, getRankLabel, gradeEntries } from './lib/score';
 import { checkStorage, clearState, loadState, saveState, ttlMs } from './lib/storage';
 import { initialState, reducer } from './state/reducer';
 
@@ -43,6 +43,7 @@ const App = () => {
     );
     return gradeTotal + boardTotal;
   }, [state]);
+  const rankLabel = useMemo(() => getRankLabel(total), [total]);
 
   const allBoardsOn = Object.values(state.boards).every(Boolean);
 
@@ -61,6 +62,10 @@ const App = () => {
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-slate-400">nobocon calc</p>
               <p className="text-3xl font-bold text-white">合計 {formatPoints(total)} pt</p>
+              <p className="mt-1 text-xs text-slate-400">
+                このスコアでランクは{' '}
+                <span className="text-sm font-semibold text-slate-100">{rankLabel}</span> になります
+              </p>
             </div>
             <button
               type="button"

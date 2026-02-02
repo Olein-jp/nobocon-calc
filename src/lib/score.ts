@@ -29,3 +29,30 @@ export const gradePoints = Object.fromEntries(gradeEntries) as Record<string, nu
 export const boardPoints = Object.fromEntries(boardEntries) as Record<string, number>;
 
 export const formatPoints = (value: number) => new Intl.NumberFormat('ja-JP').format(value);
+
+type RankEntry = {
+  label: string;
+  min: number;
+  max: number;
+};
+
+export const rankEntries: RankEntry[] = [
+  { label: 'ノービス', min: 0, max: 2999 },
+  { label: 'I', min: 3000, max: 3999 },
+  { label: 'H', min: 4000, max: 4999 },
+  { label: 'G', min: 5000, max: 5999 },
+  { label: 'F', min: 6000, max: 6999 },
+  { label: 'E', min: 7000, max: 7999 },
+  { label: 'D', min: 8000, max: 8999 },
+  { label: 'C', min: 9000, max: 10999 },
+  { label: 'B', min: 11000, max: 13999 },
+  { label: 'A', min: 14000, max: 17499 },
+  { label: 'S', min: 17500, max: 26999 },
+  { label: 'エキスパート', min: 27000, max: 39999 },
+  { label: 'アルティメット', min: 40000, max: Number.POSITIVE_INFINITY }
+];
+
+export const getRankLabel = (total: number) => {
+  const entry = rankEntries.find(({ min, max }) => total >= min && total <= max);
+  return entry?.label ?? '未設定';
+};

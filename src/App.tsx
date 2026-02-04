@@ -8,15 +8,21 @@ const MENU_ATTENTION_DELAY_MS = 2000;
 const MENU_ATTENTION_DURATION_MS = 1100;
 const MENU_SCROLL_THRESHOLD = 24;
 const menuLinks = [
-  { label: 'のぼコン トップページ', href: 'https://nobocon.com/', description: '公式サイト' },
-  { label: '東北シリーズ', href: 'https://nobocon.com/?cat=31', description: 'シリーズ一覧' },
-  { label: '北関東シリーズ', href: 'https://nobocon.com/?cat=33', description: 'シリーズ一覧' },
-  { label: '東京シリーズ', href: 'https://nobocon.com/?cat=34', description: 'シリーズ一覧' },
-  { label: '東海シリーズ', href: 'https://nobocon.com/?cat=37', description: 'シリーズ一覧' },
-  { label: '関西シリーズ', href: 'https://nobocon.com/?cat=35', description: 'シリーズ一覧' },
-  { label: '中国シリーズ', href: 'https://nobocon.com/?cat=47', description: 'シリーズ一覧' },
-  { label: '九州北部北部シリーズ', href: 'https://nobocon.com/?cat=32', description: 'シリーズ一覧' },
-  { label: '四国シリーズ', href: 'https://nobocon.com/?cat=50', description: 'シリーズ一覧' }
+  { label: 'のぼコン トップページ', href: 'https://nobocon.com/', description: '公式サイト', external: true },
+  { label: '東北シリーズ', href: 'https://nobocon.com/?cat=31', description: 'シリーズ一覧', external: true },
+  { label: '北関東シリーズ', href: 'https://nobocon.com/?cat=33', description: 'シリーズ一覧', external: true },
+  { label: '東京シリーズ', href: 'https://nobocon.com/?cat=34', description: 'シリーズ一覧', external: true },
+  { label: '東海シリーズ', href: 'https://nobocon.com/?cat=37', description: 'シリーズ一覧', external: true },
+  { label: '関西シリーズ', href: 'https://nobocon.com/?cat=35', description: 'シリーズ一覧', external: true },
+  { label: '中国シリーズ', href: 'https://nobocon.com/?cat=47', description: 'シリーズ一覧', external: true },
+  { label: '九州北部シリーズ', href: 'https://nobocon.com/?cat=32', description: 'シリーズ一覧', external: true },
+  { label: '四国シリーズ', href: 'https://nobocon.com/?cat=50', description: 'シリーズ一覧', external: true },
+  {
+    label: 'NOBOCON CALC について',
+    href: '/about.html',
+    description: 'このアプリの使い方と概要',
+    external: false
+  }
 ];
 
 const App = () => {
@@ -295,8 +301,13 @@ const App = () => {
               <a
                 key={link.label}
                 href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noopener noreferrer' : undefined}
+                onClick={() => {
+                  if (!link.external) {
+                    setMenuOpen(false);
+                  }
+                }}
                 className="rounded-2xl border border-slate-800/70 bg-slate-900/60 px-4 py-3 transition hover:border-tide/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tide"
               >
                 <p className="text-sm font-semibold text-slate-100">{link.label}</p>

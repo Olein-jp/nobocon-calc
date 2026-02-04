@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NOBOCON CALC について</title>
+    <link rel="icon" type="image/png" href="/site-icon.png" />
+    <meta
+      name="description"
+      content="NOBOCON CALC の使い方や特徴を紹介するページ"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'IBM Plex Sans', 'Zen Kaku Gothic New', system-ui, sans-serif;
+        color: #e2e8f0;
+        background: radial-gradient(circle at top, rgba(14, 165, 164, 0.25), transparent 45%),
+          radial-gradient(circle at 20% 20%, rgba(251, 113, 133, 0.2), transparent 40%),
+          #020617;
+        min-height: 100vh;
+      }
+
+      .pattern-grid {
+        background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+        background-size: 32px 32px;
+        min-height: 100vh;
+      }
+
+      .container {
+        margin: 0 auto;
+        max-width: 960px;
+        padding: 48px 20px 72px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 16px;
+        padding: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 24px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.5);
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 2.4vw, 2.6rem);
+        color: #ffffff;
+      }
+
+      .hero p {
+        margin: 0;
+        line-height: 1.7;
+        color: #cbd5f5;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #99f6e4;
+        border: 1px solid rgba(45, 212, 191, 0.5);
+        background: rgba(15, 118, 110, 0.12);
+      }
+
+      .grid {
+        margin-top: 28px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .card {
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.8);
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 1.1rem;
+        color: #f8fafc;
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #cbd5f5;
+        line-height: 1.7;
+      }
+
+      .card li {
+        margin-bottom: 6px;
+      }
+
+      .cta {
+        margin-top: 32px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .cta a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .cta a:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 30px rgba(14, 165, 164, 0.2);
+      }
+
+      .cta .primary {
+        color: #0f172a;
+        background: #2dd4bf;
+      }
+
+      .cta .ghost {
+        color: #f1f5f9;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(15, 23, 42, 0.7);
+      }
+
+      .footer-note {
+        margin-top: 28px;
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+
+      .footer-note a {
+        color: #38bdf8;
+      }
+
+      @media (min-width: 760px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pattern-grid">
+      <main class="container">
+        <section class="hero">
+          <span class="badge">NOBOCON CALC</span>
+          <h1>NOBOCON CALC について</h1>
+          <p>
+            のぼコンのポイント計算を、手元で素早くまとめるためのシンプルなスコア計算ツールです。
+            完登数とのぼコンボードのクリアしたものをチェックするだけで合計ポイントとランク目安を確認できます。
+          </p>
+        </section>
+
+        <section class="grid">
+          <article class="card">
+            <h2>できること</h2>
+            <ul>
+              <li>級・段別の完登数を入力して合計ポイントを自動計算</li>
+              <li>のぼコンボードの達成状況をワンタップで反映</li>
+              <li>合計ポイントからランクの目安を表示</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h2>使い方の流れ</h2>
+            <ul>
+              <li>各課題の完登数を級・段別に入力する</li>
+              <li>クリアしたのぼコンボード課題にチェックを入れる（一括全選択も可能）</li>
+              <li>ヘッダーに合計ポイントとランクを表示</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h2>保存について</h2>
+            <ul>
+              <li>入力内容はブラウザ内に12時間保存されます</li>
+              <li>手動で「リセット」「すべて初期化」を行うと内容は消去されます</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h2>関連リンク</h2>
+            <ul>
+              <li>メニューから各シリーズのページへアクセスできます</li>
+              <li>公式サイトの最新情報もあわせてご確認ください</li>
+            </ul>
+          </article>
+        </section>
+
+        <div class="cta">
+          <a class="primary" href="/">計算に戻る</a>
+        </div>
+
+        <p class="footer-note">
+          このウェブアプリは非公式のものであり、のぼコン運営団体とは一切関係ありません。
+        </p>
+        <p class="footer-note">
+          開発は<a href="https://olein-design.com" target="_blank" rel="noopener noreferrer">オレインデザイン</a>が行なっています。ホームページや WordPress で困ったらご相談ください。
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

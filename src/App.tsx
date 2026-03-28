@@ -225,7 +225,7 @@ const App = () => {
           onClick={() => setSettingsOpen((open) => !open)}
           aria-expanded={settingsOpen}
           aria-controls="class-settings-dialog"
-          className={`fixed right-0 top-2 z-30 rounded-b-2xl rounded-t-none border border-cyan-400/50 border-t-0 bg-slate-950/95 px-4 py-2 text-xs font-semibold tracking-[0.08em] text-cyan-100 shadow-[0_10px_30px_rgba(8,145,178,0.2)] backdrop-blur transition hover:border-cyan-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+          className={`fixed right-0 top-0 z-30 rounded-b-2xl rounded-br-none rounded-t-none border border-cyan-400/50 border-t-0 bg-slate-950/95 px-4 py-2 text-xs font-semibold tracking-[0.08em] text-cyan-100 shadow-[0_10px_30px_rgba(8,145,178,0.2)] backdrop-blur transition hover:border-cyan-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
             settingsOpen ? 'translate-y-1 border-cyan-200 text-white' : ''
           }`}
         >
@@ -361,7 +361,7 @@ const App = () => {
           </div>
         </aside>
 
-        <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 pt-14 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 pt-0 backdrop-blur">
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>

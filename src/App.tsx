@@ -12,19 +12,25 @@ import {
   gradePoints
 } from './lib/score';
 import { checkStorage, clearState, loadState, saveState, ttlMs } from './lib/storage';
-import { initialState, reducer } from './state/reducer';
+import { initialState, playerSlots, reducer } from './state/reducer';
+import type { ParticipantCount } from './state/reducer';
 
 const SAVE_DEBOUNCE_MS = 300;
 const MENU_ATTENTION_DELAY_MS = 2000;
 const MENU_ATTENTION_DURATION_MS = 1100;
 const MENU_SCROLL_THRESHOLD = 24;
 const COPY_FEEDBACK_MS = 2200;
+const participantCounts = [1, 2] as const satisfies readonly ParticipantCount[];
 
 const classDescriptions = {
   general: '一般クラスとして通常の完登数だけを集計します。',
   advance: '8Q〜4Q は参加クラス設定で完登扱いにできます。対象Qの通常入力は不要です。',
   master: '8Q〜3Q は参加クラス設定で完登扱いにできます。対象Qの通常入力は不要です。'
 } as const;
+
+const getPlayerFallbackLabel = (playerId: string) =>
+  playerSlots.find(({ id }) => id === playerId)?.label ?? '参加者';
+const getPlayerDisplayName = (playerId: string, name: string) => name.trim() || getPlayerFallbackLabel(playerId);
 
 const App = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -35,6 +41,8 @@ const App = () => {
   const [menuCompact, setMenuCompact] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [copyMessage, setCopyMessage] = useState('');
+  const activePlayer = state.players[state.activePlayerId];
+  const activePlayerLabel = getPlayerDisplayName(state.activePlayerId, activePlayer.name);
 
   const baseUrl = import.meta.env.BASE_URL;
   const menuLinks = useMemo(
@@ -148,7 +156,7 @@ const App = () => {
     return () => window.clearTimeout(timer);
   }, [copyMessage]);
 
-  const eligibleGrades = useMemo(() => getEligibleGrades(state.classType), [state.classType]);
+  const eligibleGrades = useMemo(() => getEligibleGrades(activePlayer.classType), [activePlayer.classType]);
   const eligibleGradeSet = useMemo<Set<string>>(() => new Set(eligibleGrades), [eligibleGrades]);
   const visibleGradeEntries = useMemo(
     () => gradeEntries.filter(([key]) => !eligibleGradeSet.has(key)),
@@ -159,45 +167,79 @@ const App = () => {
     () =>
       calculateGradeTotal(
         Object.fromEntries(
-          Object.entries(state.counts).map(([key, count]) => [key, eligibleGradeSet.has(key) ? 0 : count])
+          Object.entries(activePlayer.counts).map(([key, count]) => [key, eligibleGradeSet.has(key) ? 0 : count])
         )
       ),
-    [eligibleGradeSet, state.counts]
+    [eligibleGradeSet, activePlayer.counts]
   );
   const boardTotal = useMemo(
-    () => boardEntries.reduce((sum, [key, points]) => sum + (state.boards[key] ? points : 0), 0),
-    [state.boards]
+    () => boardEntries.reduce((sum, [key, points]) => sum + (activePlayer.boards[key] ? points : 0), 0),
+    [activePlayer.boards]
   );
   const classBonusTotal = useMemo(
-    () => eligibleGrades.reduce((sum, key) => sum + state.classCounts[key], 0),
-    [eligibleGrades, state.classCounts]
+    () => eligibleGrades.reduce((sum, key) => sum + activePlayer.classCounts[key], 0),
+    [eligibleGrades, activePlayer.classCounts]
   );
   const classBonusPoints = useMemo(
-    () => eligibleGrades.reduce((sum, key) => sum + gradePoints[key] * state.classCounts[key], 0),
-    [eligibleGrades, state.classCounts]
+    () => eligibleGrades.reduce((sum, key) => sum + gradePoints[key] * activePlayer.classCounts[key], 0),
+    [eligibleGrades, activePlayer.classCounts]
   );
   const total = gradeTotal + boardTotal + classBonusPoints;
   const rankLabel = useMemo(() => getRankLabel(total), [total]);
   const nextRank = useMemo(() => getNextRank(total), [total]);
   const rankProgress = nextRank ? Math.max(0, Math.min(100, (total / (total + nextRank.pointsNeeded)) * 100)) : 100;
+  const playerSummaries = useMemo(
+    () =>
+      playerSlots.map(({ id }) => {
+        const player = state.players[id];
+        const playerEligibleGrades = getEligibleGrades(player.classType);
+        const playerEligibleGradeSet = new Set<string>(playerEligibleGrades);
+        const playerGradeTotal = calculateGradeTotal(
+          Object.fromEntries(
+            Object.entries(player.counts).map(([key, count]) => [key, playerEligibleGradeSet.has(key) ? 0 : count])
+          )
+        );
+        const playerBoardTotal = boardEntries.reduce((sum, [key, points]) => sum + (player.boards[key] ? points : 0), 0);
+        const playerClassBonusPoints = playerEligibleGrades.reduce(
+          (sum, key) => sum + gradePoints[key] * player.classCounts[key],
+          0
+        );
 
-  const allBoardsOn = Object.values(state.boards).every(Boolean);
+        return {
+          id,
+          label: getPlayerDisplayName(id, player.name),
+          total: playerGradeTotal + playerBoardTotal + playerClassBonusPoints
+        };
+      }),
+    [state.players]
+  );
 
-  const handleReset = () => {
-    if (!window.confirm('入力内容をすべて初期化します。よろしいですか？')) return;
-    dispatch({ type: 'RESET' });
+  const allBoardsOn = Object.values(activePlayer.boards).every(Boolean);
+
+  const handleResetActivePlayer = () => {
+    if (!window.confirm(`${activePlayerLabel}の入力内容を初期化します。よろしいですか？`)) return;
+    dispatch({ type: 'RESET_ACTIVE_PLAYER' });
+    setSettingsOpen(false);
+    setMenuOpen(false);
+    setCopyMessage(`${activePlayerLabel}の入力を初期化しました。`);
+  };
+
+  const handleResetAll = () => {
+    if (!window.confirm('2人分の入力内容をすべて初期化します。よろしいですか？')) return;
+    dispatch({ type: 'RESET_ALL' });
     if (storageAvailable) {
       clearState();
     }
     setSettingsOpen(false);
     setMenuOpen(false);
-    setCopyMessage('入力を初期化しました。');
+    setCopyMessage('2人分の入力を初期化しました。');
   };
 
   const handleCopySummary = async () => {
     const lines = [
       'NOBOCON CALC 集計結果',
-      `参加枠: ${classLabels[state.classType]}`,
+      `対象: ${activePlayerLabel}`,
+      `参加枠: ${classLabels[activePlayer.classType]}`,
       `通常課題: ${formatPoints(gradeTotal)} pt`,
       `のぼコンボード: ${formatPoints(boardTotal)} pt`,
       `クラス加算: ${formatPoints(classBonusPoints)} pt`,
@@ -229,7 +271,7 @@ const App = () => {
             settingsOpen ? 'translate-y-1 border-cyan-200 text-white' : ''
           }`}
         >
-          アドバンス・マスター設定
+          アドバンス・マスター・利用人数設定
         </button>
 
         <aside
@@ -245,7 +287,7 @@ const App = () => {
           <button
             type="button"
             onClick={() => setSettingsOpen(false)}
-            aria-label="アドバンス・マスター設定を閉じる"
+            aria-label="アドバンス・マスター・利用人数設定を閉じる"
             className="absolute inset-0 bg-slate-950"
             tabIndex={settingsOpen ? 0 : -1}
           />
@@ -258,11 +300,11 @@ const App = () => {
             <div className="mx-auto flex w-full max-w-3xl flex-col overflow-hidden bg-slate-950 shadow-2xl">
               <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-800 bg-slate-950 px-5 py-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/70">class setting</p>
+                  <p className="text-xs uppercase tracking-[0.24em] text-cyan-200/70">setting</p>
                   <h2 id="class-settings-title" className="mt-1 text-lg font-semibold text-white">
-                    参加クラス設定
+                    参加クラス・利用人数設定
                   </h2>
-                  <p className="mt-1 text-sm text-slate-300">{classDescriptions[state.classType]}</p>
+                  <p className="mt-1 text-sm text-slate-300">{classDescriptions[activePlayer.classType]}</p>
                 </div>
                 <button
                   type="button"
@@ -275,9 +317,61 @@ const App = () => {
               </div>
 
               <div className="flex flex-col gap-8 px-5 pb-16 pt-4">
-                <div className="grid grid-cols-3 gap-2">
+                <fieldset className="space-y-3 rounded-2xl border border-slate-800/80 bg-slate-900/60 px-4 py-4">
+                  <legend className="px-1 text-sm font-semibold text-slate-100">利用人数</legend>
+                  <div className="grid grid-cols-2 gap-2">
+                    {participantCounts.map((count) => {
+                      const selected = state.participantCount === count;
+                      return (
+                        <label
+                          key={count}
+                          className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                            selected
+                              ? 'border-cyan-100 bg-tide text-slate-950 shadow-[0_10px_24px_rgba(14,165,164,0.25)]'
+                              : 'border-slate-700 bg-slate-950/60 text-slate-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="participant-count"
+                            value={count}
+                            checked={selected}
+                            onChange={() => dispatch({ type: 'SET_PARTICIPANT_COUNT', count })}
+                            className="h-4 w-4 accent-cyan-300"
+                          />
+                          {count}人で利用
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {state.participantCount === 2 ? (
+                    <div className="grid gap-3 pt-2 sm:grid-cols-2">
+                      {playerSlots.map(({ id, label }) => {
+                        const player = state.players[id];
+                        return (
+                          <label key={id} className="block text-sm font-semibold text-slate-100">
+                            {label}の名前（任意）
+                            <input
+                              type="text"
+                              value={player.name}
+                              maxLength={16}
+                              placeholder={label}
+                              onChange={(event) =>
+                                dispatch({ type: 'SET_PLAYER_NAME', playerId: id, name: event.currentTarget.value })
+                              }
+                              className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/50"
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </fieldset>
+
+                <div className="grid gap-2">
                   {classTypes.map((classType) => {
-                    const selected = state.classType === classType;
+                    const selected = activePlayer.classType === classType;
                     return (
                       <button
                         key={classType}
@@ -308,7 +402,7 @@ const App = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-slate-100">
-                        {classLabels[state.classType]}加算対象の課題数
+                        {classLabels[activePlayer.classType]}加算対象の課題数
                       </p>
                       <p className="text-xs text-slate-400">
                         合計 {formatPoints(classBonusPoints)} pt / {classBonusTotal} 課題
@@ -318,7 +412,7 @@ const App = () => {
                     <div className="grid gap-3">
                       {eligibleGrades.map((key) => {
                         const points = gradePoints[key];
-                        const count = state.classCounts[key];
+                        const count = activePlayer.classCounts[key];
                         return (
                           <article
                             key={key}
@@ -362,7 +456,32 @@ const App = () => {
         </aside>
 
         <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 pt-0 backdrop-blur">
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-4 pt-12 sm:pt-4">
+            {state.participantCount === 2 ? (
+              <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-1">
+                {playerSummaries.map(({ id, label, total: playerTotal }) => {
+                  const selected = state.activePlayerId === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => dispatch({ type: 'SET_ACTIVE_PLAYER', playerId: id })}
+                      className={`rounded-xl px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+                        selected
+                          ? 'bg-tide text-slate-950 shadow-[0_10px_24px_rgba(14,165,164,0.25)]'
+                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                      aria-pressed={selected}
+                    >
+                      <span className="block truncate text-sm font-semibold">{label}</span>
+                      <span className={`block text-xs ${selected ? 'text-slate-800' : 'text-slate-400'}`}>
+                        {formatPoints(playerTotal)} pt
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-slate-400">nobocon calc</p>
@@ -371,9 +490,12 @@ const App = () => {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
                   <span className="rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-slate-200">
-                    参加枠: {classLabels[state.classType]}
+                    対象: {activePlayerLabel}
                   </span>
-                  {state.classType !== 'general' ? (
+                  <span className="rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-slate-200">
+                    参加枠: {classLabels[activePlayer.classType]}
+                  </span>
+                  {activePlayer.classType !== 'general' ? (
                     <span className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-cyan-100">
                       クラス加算: {formatPoints(classBonusPoints)} pt
                     </span>
@@ -399,10 +521,10 @@ const App = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleReset}
+                  onClick={handleResetActivePlayer}
                   className="rounded-full border border-rose-400/50 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
                 >
-                  リセット
+                  この人をリセット
                 </button>
               </div>
             </div>
@@ -434,14 +556,14 @@ const App = () => {
           </section>
 
           <section className="space-y-3">
-            {state.classType !== 'general' ? (
+            {activePlayer.classType !== 'general' ? (
               <p className="text-sm text-slate-400">
-                {classLabels[state.classType]}で完登扱いになるQは上部の参加クラス設定で入力してください。
+                {classLabels[activePlayer.classType]}で完登扱いになるQは上部の参加クラス設定で入力してください。
               </p>
             ) : null}
             <div className="grid gap-4">
               {visibleGradeEntries.map(([key, points], index) => {
-                const count = state.counts[key];
+                const count = activePlayer.counts[key];
                 return (
                   <article
                     key={key}
@@ -496,7 +618,7 @@ const App = () => {
             </div>
             <div className="grid gap-3">
               {boardEntries.map(([key, points], index) => {
-                const isOn = state.boards[key];
+                const isOn = activePlayer.boards[key];
                 return (
                   <button
                     key={key}
@@ -538,7 +660,7 @@ const App = () => {
               <p>入力は自動保存されます（保持期限 {Math.round(ttlMs / 3600000)} 時間）。</p>
               <button
                 type="button"
-                onClick={handleReset}
+                onClick={handleResetAll}
                 className="rounded-full border border-slate-600/60 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:border-white hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tide"
               >
                 すべて初期化

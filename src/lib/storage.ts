@@ -1,7 +1,7 @@
 import type { State } from '../state/reducer';
 
-const STORAGE_KEY = 'nobocon-calc:v2';
-const LEGACY_STORAGE_KEY = 'nobocon-calc:v1';
+const STORAGE_KEY = 'nobocon-calc:v3';
+const LEGACY_STORAGE_KEYS = ['nobocon-calc:v2', 'nobocon-calc:v1'];
 const TTL_MS = 12 * 60 * 60 * 1000;
 
 export type StorageStatus =
@@ -19,10 +19,10 @@ export const checkStorage = (): StorageStatus => {
   }
 };
 
-const parseStoredState = (raw: string | null): Partial<State> | null => {
+const parseStoredState = (raw: string | null): unknown | null => {
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as Partial<State>;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
@@ -31,23 +31,29 @@ const parseStoredState = (raw: string | null): Partial<State> | null => {
 const isFreshState = (savedAt: unknown) =>
   typeof savedAt === 'number' && Number.isFinite(savedAt) && Date.now() - savedAt <= TTL_MS;
 
-export const loadState = (): Partial<State> | null => {
+const getSavedAt = (state: unknown) => {
+  if (!state || typeof state !== 'object') return undefined;
+  return (state as { savedAt?: unknown }).savedAt;
+};
+
+export const loadState = (): unknown | null => {
   try {
     const current = parseStoredState(window.localStorage.getItem(STORAGE_KEY));
-    if (current?.savedAt && isFreshState(current.savedAt)) {
+    if (isFreshState(getSavedAt(current))) {
       return current;
     }
 
-    const legacy = parseStoredState(window.localStorage.getItem(LEGACY_STORAGE_KEY));
-    if (legacy?.savedAt && isFreshState(legacy.savedAt)) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
-      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-      return legacy;
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacy = parseStoredState(window.localStorage.getItem(legacyKey));
+      if (isFreshState(getSavedAt(legacy))) {
+        window.localStorage.removeItem(STORAGE_KEY);
+        return legacy;
+      }
     }
 
-    if (current || legacy) {
+    if (current || LEGACY_STORAGE_KEYS.some((legacyKey) => window.localStorage.getItem(legacyKey))) {
       window.localStorage.removeItem(STORAGE_KEY);
-      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      LEGACY_STORAGE_KEYS.forEach((legacyKey) => window.localStorage.removeItem(legacyKey));
     }
 
     return null;
@@ -68,7 +74,7 @@ export const saveState = (state: State): StorageStatus => {
 
 export const clearState = () => {
   window.localStorage.removeItem(STORAGE_KEY);
-  window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  LEGACY_STORAGE_KEYS.forEach((legacyKey) => window.localStorage.removeItem(legacyKey));
 };
 
 export const ttlMs = TTL_MS;

@@ -238,7 +238,6 @@ const App = () => {
   const handleCopySummary = async () => {
     const lines = [
       'NOBOCON CALC 集計結果',
-      `対象: ${activePlayerLabel}`,
       `参加枠: ${classLabels[activePlayer.classType]}`,
       `通常課題: ${formatPoints(gradeTotal)} pt`,
       `のぼコンボード: ${formatPoints(boardTotal)} pt`,
@@ -247,8 +246,27 @@ const App = () => {
       `ランク: ${rankLabel}`
     ];
 
+    if (state.participantCount === 2) {
+      lines.splice(1, 0, `対象: ${activePlayerLabel}`);
+    }
+
     if (nextRank) {
       lines.push(`次ランク ${nextRank.label} まで: ${formatPoints(nextRank.pointsNeeded)} pt`);
+    }
+
+    lines.push('', '級別内訳');
+    for (const [key, points] of gradeEntries) {
+      const normalCount = eligibleGradeSet.has(key) ? 0 : activePlayer.counts[key];
+      const classCount = eligibleGradeSet.has(key) ? activePlayer.classCounts[key] : 0;
+      const count = normalCount + classCount;
+      lines.push(`${key}: ${count}本 / ${formatPoints(points * count)} pt`);
+    }
+
+    const completedBoardLines = boardEntries
+      .filter(([key]) => activePlayer.boards[key])
+      .map(([key, points]) => `${key}: 1本 / ${formatPoints(points)} pt`);
+    if (completedBoardLines.length > 0) {
+      lines.push('', 'のぼコンボード内訳', ...completedBoardLines);
     }
 
     try {
